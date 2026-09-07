@@ -3,3 +3,4 @@ __pycache__/
 .env
 chroma_db/
 *.pyc
+chroma_db_marker/
