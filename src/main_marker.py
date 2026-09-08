@@ -130,24 +130,56 @@ def load_or_create_vectorstore(embeddings: CohereEmbeddings) -> Chroma:
     return ingest_markdown(embeddings)
 
 
-def images_from_docs(docs) -> list[str]:
-    """Collect image filenames from retrieved chunks' metadata.
+# def images_from_docs(docs) -> list[str]:
+#     """Collect image filenames from retrieved chunks' metadata.
 
-    De-duplicated, order preserved, and filtered to files that actually
-    exist under marker_output/images/.
-    """
-    ordered: list[str] = []
+#     De-duplicated, order preserved, and filtered to files that actually
+#     exist under marker_output/images/.
+#     """
+#     ordered: list[str] = []
+#     for doc in docs:
+#         raw = doc.metadata.get("images", "[]")
+#         try:
+#             names = json.loads(raw)
+#         except (TypeError, json.JSONDecodeError):
+#             names = []
+#         for name in names:
+#             if name not in ordered and (IMAGES_DIR / name).exists():
+#                 ordered.append(name)
+#     return ordered
+def images_from_docs(docs, answer: str) -> list[str]:
+    if not docs or "غير موجودة" in answer:
+        return []
     for doc in docs:
         raw = doc.metadata.get("images", "[]")
         try:
             names = json.loads(raw)
         except (TypeError, json.JSONDecodeError):
             names = []
-        for name in names:
-            if name not in ordered and (IMAGES_DIR / name).exists():
-                ordered.append(name)
-    return ordered
+        valid = [name for name in names if (IMAGES_DIR / name).exists()]
+        if valid:
+            return valid
+    return []
+# def images_from_docs(docs) -> list[str]:
+#     """Collect image filenames from ONLY the top-ranked retrieved chunk
+#     (docs[0]) — the most relevant one. We deliberately ignore images from
+#     lower-ranked chunks (docs[1:]) even though their TEXT still feeds the
+#     answer, because those images are often only loosely related and were
+#     cluttering the display.
 
+#     Filtered to files that actually exist under marker_output/images/.
+#     """
+#     if not docs:
+#         return []
+
+#     top_doc = docs[0]
+#     raw = top_doc.metadata.get("images", "[]")
+#     try:
+#         names = json.loads(raw)
+#     except (TypeError, json.JSONDecodeError):
+#         names = []
+
+#     return [name for name in names if (IMAGES_DIR / name).exists()]
 
 def build_rag_chain(vectorstore: Chroma):
     """Retriever (top 4) + Groq chat model.
@@ -192,7 +224,7 @@ def build_rag_chain(vectorstore: Chroma):
 def answer_with_sources(rag_chain, question: str) -> tuple[str, list[str]]:
     """Run the chain and return (answer_text, existing_image_filenames)."""
     result = rag_chain.invoke(question)
-    return result["answer"], images_from_docs(result["docs"])
+    return result["answer"], images_from_docs(result["docs"], result["answer"])
 
 
 def chat_loop(rag_chain) -> None:
