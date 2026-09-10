@@ -16,6 +16,7 @@ is kept identical to main.py so old vs new can be compared fairly.
 import json
 import os
 import sys
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -25,7 +26,11 @@ from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_classic.retrievers import EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
 from langchain_groq import ChatGroq
+
+import cohere
 
 # The validated chunking + image-linking logic lives here. Reused as-is.
 from build_chunks_from_marker import IMAGES_DIR, build_chunks
@@ -47,6 +52,11 @@ SYSTEM_PROMPT = """أنت مساعد يجيب عن أسئلة دليل مستخ�
 - اعتمد حصراً على السياق المرفق أدناه. لا تستخدم معلومات خارجية.
 - إذا لم تكن الإجابة موجودة في السياق، قل بوضوح أن المعلومة غير موجودة في الدليل.
 - كن دقيقاً ومباشراً، واذكر التفاصيل العملية إن وُجدت في السياق.
+- إذا كان السؤال يطلب قائمة شاملة (مثل "كل الخدمات" أو "ايش خدمات كذا")، اذكر
+  فقط ما ورد فعلياً في السياق المتاح لك، ولا تجزم أبداً بأن هذه القائمة كاملة
+  أو نهائية. لا تقل عبارات مثل "هذه كل الخدمات" أو "غير موجودة" عن عناصر لم
+  تُذكر — فقط اذكر ما وصلك، ويمكنك إضافة أن هناك احتمال وجود تفاصيل إضافية
+  بالدليل الكامل لم تصل ضمن السياق المتاح لهذا السؤال.
 
 السياق:
 {context}
@@ -181,6 +191,40 @@ def images_from_docs(docs, answer: str) -> list[str]:
 
 #     return [name for name in names if (IMAGES_DIR / name).exists()]
 
+def normalize_query(text: str) -> str:
+    """يشيل علامات ترقيم من نهاية السؤال قبل البحث فقط — يقلل حساسية
+    الاسترجاع لتفاصيل الكتابة (مثل ؟ مقابل بدون ؟). السؤال الأصلي يبقى
+    كما هو عند إرساله للـLLM لاحقاً، هذا التنظيف للبحث فقط."""
+    cleaned = re.sub(r'[؟?!.,،]+\s*$', '', text.strip())
+    return cleaned if cleaned else text.strip()  # لو صار فاضي، رجّع الأصل
+
+
+def rerank_docs(question: str, docs: list, top_n: int = 4) -> list:
+    """Send the retrieved docs plus the question to Cohere Rerank, and return
+    the top_n most relevant ones re-ordered by actual semantic relevance —
+    more accurate than raw embedding distance alone. Falls back to the first
+    top_n of the original order if the API call fails, so a rate-limit or
+    network error never crashes the whole answer flow."""
+    if not docs:
+        return []
+
+    co = cohere.Client(os.getenv("COHERE_API_KEY"))
+    texts = [doc.page_content for doc in docs]
+
+    try:
+        results = co.rerank(
+            query=question,
+            documents=texts,
+            top_n=top_n,
+            model="rerank-multilingual-v3.0",
+        )
+    except Exception as e:
+        print(f"Warning: Cohere rerank call failed ({e}) — falling back to raw order.")
+        return docs[:top_n]
+
+    return [docs[r.index] for r in results.results]
+
+
 def build_rag_chain(vectorstore: Chroma):
     """Retriever (top 4) + Groq chat model.
 
@@ -188,7 +232,18 @@ def build_rag_chain(vectorstore: Chroma):
         {"question": str, "docs": list[Document], "answer": str}
     so callers can see which chunks were retrieved, not just the answer.
     """
-    retriever = vectorstore.as_retriever(search_kwargs={"k": RETRIEVE_K})
+    # retriever = vectorstore.as_retriever(search_kwargs={"k": 12})
+    semantic_retriever = vectorstore.as_retriever(search_kwargs={"k": 12})
+
+    documents = build_documents()  # نفس الـchunks، بناء محلي بدون أي تكلفة API
+    bm25_retriever = BM25Retriever.from_documents(documents)
+    bm25_retriever.k = 12
+
+    retriever = EnsembleRetriever(
+        retrievers=[semantic_retriever, bm25_retriever],
+        weights=[0.5, 0.5],
+    )
+    
 
     llm = ChatGroq(model="openai/gpt-oss-120b")
 
@@ -216,7 +271,11 @@ def build_rag_chain(vectorstore: Chroma):
 
     # question -> {"docs", "question"} -> + "answer"
     return RunnableParallel(
-        docs=retriever,
+        docs=lambda question: rerank_docs(
+            normalize_query(question),
+            retriever.invoke(normalize_query(question)),
+            top_n=8, #try top_n=8,
+        ),
         question=RunnablePassthrough(),
     ) | RunnablePassthrough.assign(answer=answer_chain)
 

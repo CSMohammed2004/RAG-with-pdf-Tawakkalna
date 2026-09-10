@@ -1,0 +1,287 @@
+
+[
+  {
+    "id": 1,
+    "question": "كيف اغير كلمة السر",
+    "expected_keywords": [
+      "الإعدادات",
+      "تغيير كلمة المرور",
+      "8 خانات"
+    ],
+    "category": "baseline_simple",
+    "note": "سؤال بسيط كان شغال من البداية — خط الأساس، لازم يفضل صح دايماً"
+  },
+  {
+    "id": 2,
+    "question": "تحديث رقم الجوال",
+    "expected_keywords": [
+      "زائر",
+      "خليجي",
+      "مواطن",
+      "مقيم",
+      "أبشر"
+    ],
+    "category": "baseline_simple",
+    "note": "سؤال متعدد الحالات كان شغال صح من قبل"
+  },
+  {
+    "id": 3,
+    "question": "التبرع بالأعضاء",
+    "expected_keywords": [
+      "18 سنة",
+      "خدمات الصحة",
+      "التقديم"
+    ],
+    "category": "ocr_corruption_fixed",
+    "note": "كانت الكلمة مشوّهة (الت يع باألعضاء) قبل تصحيح extracted_text.md — يتحقق الفيكس ثابت"
+  },
+  {
+    "id": 4,
+    "question": "ابي اتبرع",
+    "expected_keywords": [
+      "إحسان",
+      "التبرع بالأعضاء"
+    ],
+    "category": "ocr_corruption_fixed",
+    "note": "قبل التصحيح كان يرجع غير موجودة كلياً — يتحقق النظام يميّز بين خدمتين منفصلتين"
+  },
+  {
+    "id": 5,
+    "question": "خدمات احسان",
+    "expected_keywords": [
+      "إحسان",
+      "التبرع السريع"
+    ],
+    "category": "ocr_corruption_fixed",
+    "note": "نفس فئة كلمة التبرع المشوّهة، سياق مختلف (اختصار الصفحة الرئيسية)"
+  },
+  {
+    "id": 6,
+    "question": "ماهو واكب",
+    "expected_keywords": [
+      "متابعة",
+      "الأخبار",
+      "الأشخاص"
+    ],
+    "category": "header_stripping_fixed",
+    "note": "المشكلة الجذرية الأولى بالمشروع (header يُفصل عن body) — يتحقق الفيكس القديم لسا شغال بعد كل التعديلات اللاحقة"
+  },
+  {
+    "id": 7,
+    "question": "ابي اتطوع",
+    "expected_keywords": [
+      "بوابة التطوع",
+      "فرص التطوع"
+    ],
+    "expected_no_keywords": [
+      "التبرع بالأعضاء",
+      "احسان"
+    ],
+    "category": "punctuation_sensitivity",
+    "note": "بدون علامة استفهام — أثبت التشخيص أن 'بوابة التطوع' كانت ترتيبها رقم 5 بالاسترجاع الخام (خارج k=4)، فيفشل قبل فيكس normalize_query"
+  },
+  {
+    "id": 19,
+    "question": "ابي اتطوع؟",
+    "expected_keywords": [
+      "بوابة التطوع",
+      "فرص التطوع"
+    ],
+    "expected_no_keywords": [
+      "التبرع بالأعضاء",
+      "احسان"
+    ],
+    "category": "punctuation_sensitivity",
+    "note": "نفس سؤال id 7 بالضبط، بعلامة استفهام فقط — لازم يعطي نفس نتيجة id 7 تماماً بعد فيكس normalize_query"
+  },
+  {
+    "id": 8,
+    "question": "ايش خدمات الصحة",
+    "expected_keywords": [
+      "التبرع بالأعضاء",
+      "أسعفني",
+      "نداء استغاثة",
+      "وصفتي"
+    ],
+    "category": "broad_multi_section",
+    "note": "الاختبار الحاسم لمشكلة k=4"
+  },
+  {
+    "id": 9,
+    "question": "ايش خدمات توكلنا",
+    "expected_keywords": [
+      "الخدمات العامة",
+      "الخدمات المهنية",
+      "خدمات الصحة",
+      "الخدمات الدينية",
+      "خدمات التعليم",
+      "أفراد الأسرة",
+      "خدمات الفعاليات"
+    ],
+    "category": "broad_multi_section",
+    "note": "أوسع سؤال ممكن — 7 فئات كاملة (بعد اكتشاف خدمات الفعاليات)"
+  },
+  {
+    "id": 10,
+    "question": "بوابة المناسك",
+    "expected_keywords": [
+      "التصريح",
+      "المرافقين"
+    ],
+    "category": "hierarchy_fixed",
+    "note": "يتحقق تصحيح 'ترصيح' إلى 'تصريح' وتصحيح هيكلة الخدمات الدينية"
+  },
+  {
+    "id": 11,
+    "question": "مواقيت الصلاة",
+    "expected_keywords": [
+      "مكة",
+      "المدينة"
+    ],
+    "category": "ocr_corruption_fixed",
+    "note": "يتحقق تصحيح حرف الياء الفارسي إلى العربي"
+  },
+  {
+    "id": 12,
+    "question": "بيانات منصة مدرستي",
+    "expected_keywords": [
+      "خدمات التعليم"
+    ],
+    "category": "ocr_corruption_fixed",
+    "note": "نفس فئة تصحيح الياء الفارسية + الهيكلة"
+  },
+  {
+    "id": 13,
+    "question": "ماهي عاصمة البرازيل",
+    "expected_answer_contains_not_found": true,
+    "expected_images_empty": true,
+    "category": "out_of_scope",
+    "note": "سؤال خارج نطاق الدليل كلياً"
+  },
+  {
+    "id": 14,
+    "question": "كيف اسوي تحديث للتطبيق",
+    "expected_answer_contains_not_found": true,
+    "expected_images_empty": true,
+    "category": "out_of_scope",
+    "note": "سؤال منطقي لكن مو موجود بالدليل"
+  },
+  {
+    "id": 15,
+    "question": "ماهو توكلنا؟",
+    "expected_keywords": [
+      "سدايا",
+      "كورونا"
+    ],
+    "category": "baseline_simple",
+    "note": "أول سؤال جرّبناه بالتطبيق"
+  },
+  {
+    "id": 16,
+    "question": "كيف اضيف تابعين لحسابي",
+    "expected_keywords": [
+      "أفراد الأسرة",
+      "المكفولين"
+    ],
+    "category": "baseline_simple",
+    "note": "سؤال كان شغال صح من قبل"
+  },
+  {
+    "id": 17,
+    "question": "كيف اسجل بلاغ تطوعي",
+    "expected_keywords": [
+      "بوابة التطوع"
+    ],
+    "category": "phrasing_variation",
+    "note": "صياغة مختلفة لنفس معنى 'ابي اتطوع'"
+  },
+  {
+    "id": 18,
+    "question": "التبرع مع احسان",
+    "expected_keywords": [
+      "إحسان",
+      "سريع"
+    ],
+    "expected_no_keywords": [
+      "التبرع بالأعضاء",
+      "18 سنة"
+    ],
+    "category": "hierarchy_fixed",
+    "note": "يتحقق عدم الخلط بين خدمتي التبرع بعد إصلاح الهيكلة"
+  },
+  {
+    "id": 20,
+    "question": "ابي اتبرع",
+    "expected_keywords": [
+      "إحسان",
+      "التبرع بالأعضاء"
+    ],
+    "expected_no_keywords": [
+      "أسعفني",
+      "نداء استغاثة",
+      "وصفتي"
+    ],
+    "category": "donation_scope",
+    "note": "التبرع بتوكلنا خدمتين بس: إحسان والتبرع بالأعضاء. لازم الجواب يقتصر عليهم فقط، مو باقي خدمات الصحة"
+  },
+  {
+    "id": 21,
+    "question": "ماهي خدمات توكلنا",
+    "expected_keywords": [
+      "الخدمات العامة",
+      "الخدمات المهنية",
+      "خدمات الصحة",
+      "الخدمات الدينية",
+      "خدمات التعليم",
+      "أفراد الأسرة",
+      "خدمات الفعاليات"
+    ],
+    "category": "broad_all_categories",
+    "note": "نسخة ثانية بصياغة مختلفة عن id 9 (ماهي بدل ايش) لمقارنة حساسية الصياغة بين semantic و hybrid"
+  },
+  {
+    "id": 22,
+    "question": "كيف اشوف سجل السفر",
+    "expected_keywords": [
+      "سجل السفر"
+    ],
+    "category": "specific_document_item",
+    "note": "عنصر محدد ضمن قائمة وثائق طويلة (بطاقاتي) — اختبار جيد لتفوق BM25 المحتمل (تطابق حرفي دقيق)"
+  },
+  {
+    "id": 23,
+    "question": "كيف اشوف نتائج ابنائي الدراسية",
+    "expected_keywords": [
+      "مدرستي",
+      "النتائج الدراسية"
+    ],
+    "category": "specific_service_item",
+    "note": "يختبر الربط بين صياغة عائلية غير مباشرة (ابنائي) وخدمة 'بيانات منصة مدرستي' الرسمية"
+  },
+  {
+    "id": 24,
+    "question": "ماهي خدمات الصحة",
+    "expected_keywords": [
+      "التبرع بالأعضاء",
+      "أسعفني",
+      "نداء استغاثة",
+      "وصفتي"
+    ],
+    "category": "broad_single_category",
+    "note": "نسخة ثانية بصياغة مختلفة عن id 8 لمقارنة semantic و hybrid"
+  },
+  {
+    "id": 25,
+    "question": "ماهي الخدمات العامة",
+    "expected_keywords": [
+      "تعريف رقم الجوال",
+      "رمز توكلنا",
+      "إحسان",
+      "بوابة الطقس",
+      "بوابة الاستبيانات",
+      "بوابة التطوع"
+    ],
+    "category": "broad_single_category",
+    "note": "اختبار فعالية الملخص الصناعي لفئة الخدمات العامة، بصياغة 'ماهي' بدل 'ايش'"
+  }
+]
